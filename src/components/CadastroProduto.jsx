@@ -1,7 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { db } from "../firebase"; // Corrigir o caminho aqui
-import { ref, set } from "firebase/database";
-import { v4 as uuidv4 } from "uuid";
+import { ref, set, onValue } from "firebase/database";
 
 export default function CadastroProduto() {
   const [product, setProduct] = useState({
@@ -9,6 +8,21 @@ export default function CadastroProduto() {
     quantity: "",
     price: "",
   });
+  const [products, setProducts] = useState([]);
+
+  useEffect(() => {
+    const productsRef = ref(db, "products/");
+    onValue(productsRef, (snapshot) => {
+      const data = snapshot.val();
+      const productList = data
+        ? Object.keys(data).map((key) => ({
+            id: key,
+            ...data[key],
+          }))
+        : [];
+      setProducts(productList);
+    });
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -37,13 +51,13 @@ export default function CadastroProduto() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-4">
+    <div className="min-h-screen flex gap-8 items-center justify-center bg-gray-100 p-4">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-sm bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4"
+        className="w-full flex flex-col gap-4 items-center justify-center max-w-sm h-[450px] bg-white shadow-md rounded p-8"
       >
-        <h2 className="text-2xl mb-4 text-center">Cadastro de Produto</h2>
-        <div className="mb-4">
+        <h2 className="text-2xl  text-center">Cadastro de Produto</h2>
+        <div className="">
           <label
             className="block text-gray-700 text-sm font-bold mb-2"
             htmlFor="name"
@@ -60,7 +74,7 @@ export default function CadastroProduto() {
             onChange={handleChange}
           />
         </div>
-        <div className="mb-4">
+        <div className="">
           <label
             className="block text-gray-700 text-sm font-bold mb-2"
             htmlFor="quantity"
@@ -77,7 +91,7 @@ export default function CadastroProduto() {
             onChange={handleChange}
           />
         </div>
-        <div className="mb-6">
+        <div className="">
           <label
             className="block text-gray-700 text-sm font-bold mb-2"
             htmlFor="price"
@@ -85,24 +99,45 @@ export default function CadastroProduto() {
             Preço
           </label>
           <input
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline"
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
             id="price"
-            type="text"
+            type="number"
             placeholder="Preço"
             name="price"
             value={product.price}
             onChange={handleChange}
           />
         </div>
-        <div className="flex items-center justify-between">
-          <button
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-            type="submit"
-          >
-            Cadastrar
-          </button>
-        </div>
+
+        <button
+          className="bg-blue-500 hover:bg-blue-700 items-center flex text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+          type="submit"
+        >
+          Cadastrar
+        </button>
       </form>
+      <div className="w-full max-w-sm h-[450px] bg-white shadow-md rounded overflow-x-hidden p-8">
+        <h2 className="text-2xl  text-center">Produtos Cadastrados</h2>
+        <ul>
+          {products.map((product) => (
+            <li key={product.id} className="mb-2 shadow-md">
+              <div className="text-gray-700">
+                <strong>Nome:</strong> {product.name}
+              </div>
+              <div className="text-gray-700">
+                <strong>Quantidade:</strong> {product.quantity}
+              </div>
+              <div className="text-gray-700">
+                <strong>Preço:</strong>{" "}
+                {product.price.toLocaleString("pt-BR", {
+                  style: "currency",
+                  currency: "BRL",
+                })}
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }
